@@ -113,7 +113,8 @@ public class AmplificationSetup {
         }
     }
 
-    public List<CtMethod<?>> firstSelectorSetup(CtType<?> testClassToBeAmplified, List<CtMethod<?>> testMethodsToBeAmplified)
+    public List<CtMethod<?>> firstSelectorSetup(CtType<?> testClassToBeAmplified,
+                                                 List<CtMethod<?>> testMethodsToBeAmplified)
             throws Exception {
         if(testMethodsToBeAmplified.isEmpty()) {
             LOGGER.warn("No test provided for amplification in class {}", testClassToBeAmplified.getQualifiedName());

@@ -13,6 +13,7 @@ import spoon.reflect.declaration.CtType;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static eu.stamp_project.dspot.common.report.error.ErrorEnum.ERROR_ASSERT_AMPLIFICATION;
 
@@ -44,11 +45,16 @@ public class DevFriendlyAmplification {
                                                       List<CtMethod<?>> testMethodsToBeAmplified) {
 
         final List<CtMethod<?>> selectedToBeAmplified = dSpot
-                .setupSelector(testClassToBeAmplified, testMethodsToBeAmplified);
+                .setupSelector(testClassToBeAmplified,
+                        dSpotState.getTestFinder().findTestMethods(testClassToBeAmplified,Collections.emptyList()));
+
+        // selectedToBeAmplified with all test class methods -> keep only ones matching testMethodsToBeAmplified
+        final List<CtMethod<?>> methodsToAmplify =
+                selectedToBeAmplified.stream().filter(testMethodsToBeAmplified::contains).collect(Collectors.toList());
 
         final List<CtMethod<?>> amplifiedTestMethodsToKeep = new ArrayList<>();
-        amplifiedTestMethodsToKeep.addAll(ampRemoveAssertionsAddNewOnes(testClassToBeAmplified, selectedToBeAmplified));
-        amplifiedTestMethodsToKeep.addAll(inputAmplification(testClassToBeAmplified, selectedToBeAmplified));
+        amplifiedTestMethodsToKeep.addAll(ampRemoveAssertionsAddNewOnes(testClassToBeAmplified, methodsToAmplify));
+        amplifiedTestMethodsToKeep.addAll(inputAmplification(testClassToBeAmplified, methodsToAmplify));
         return amplifiedTestMethodsToKeep;
     }
 

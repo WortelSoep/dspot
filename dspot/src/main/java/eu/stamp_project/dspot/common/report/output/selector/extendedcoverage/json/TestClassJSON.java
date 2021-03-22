@@ -9,13 +9,16 @@ import java.util.List;
 public class TestClassJSON implements eu.stamp_project.dspot.common.report.output.selector.TestClassJSON {
 
 
-    private final CoverageImprovement amplifiedCoverage;
     private List<TestCaseJSON> testCases;
     private final ExtendedCoverage initialCoverage;
+    private final CoverageImprovement amplifiedCoverage;
+    private final ExtendedCoverage fullCoverageAfterAmplification;
 
-    public TestClassJSON(ExtendedCoverage initialCoverage, CoverageImprovement amplifiedCoverage) {
+    public TestClassJSON(ExtendedCoverage initialCoverage, CoverageImprovement amplifiedCoverage,
+                         ExtendedCoverage fullCoverageAfterAmplification) {
         this.initialCoverage = initialCoverage;
         this.amplifiedCoverage = amplifiedCoverage;
+        this.fullCoverageAfterAmplification = fullCoverageAfterAmplification;
     }
 
     public boolean addTestCase(TestCaseJSON testCaseJSON) {
@@ -35,5 +38,9 @@ public class TestClassJSON implements eu.stamp_project.dspot.common.report.outpu
 
     public CoverageImprovement getAmplifiedCoverage() {
         return amplifiedCoverage;
+    }
+
+    public ExtendedCoverage getFullCoverageAfterAmplification() {
+        return fullCoverageAfterAmplification;
     }
 }

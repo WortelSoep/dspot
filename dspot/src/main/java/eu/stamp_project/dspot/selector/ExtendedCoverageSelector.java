@@ -28,11 +28,14 @@ public class ExtendedCoverageSelector extends TakeAllSelector {
 
     ExtendedCoverage cumulativeAmplifiedCoverage;
 
-    Map<CtMethod<?>, CoverageImprovement> coveragePerAmplifiedMethod;
+    Map<CtMethod<?>, CoverageImprovement> coverageImprovementPerAmplifiedMethod;
+
+    Map<CtMethod<?>, ExtendedCoverage> fullCoveragePerAmplifiedMethod;
 
     public ExtendedCoverageSelector(AutomaticBuilder automaticBuilder, UserInput configuration) {
         super(automaticBuilder, configuration);
-        this.coveragePerAmplifiedMethod = new HashMap<>();
+        this.coverageImprovementPerAmplifiedMethod = new HashMap<>();
+        this.fullCoveragePerAmplifiedMethod = new HashMap<>();
     }
 
     @Override
@@ -65,7 +68,8 @@ public class ExtendedCoverageSelector extends TakeAllSelector {
                 CoverageImprovement coverageImprovement = newCoverage.coverageImprovementOver(this.initialCoverage);
                 DSpotUtils.addComment(ctMethod, coverageImprovement.toString(), CtComment.CommentType.BLOCK, CommentEnum.Coverage);
                 methodsKept.add(ctMethod);
-                this.coveragePerAmplifiedMethod.put(ctMethod, coverageImprovement);
+                this.coverageImprovementPerAmplifiedMethod.put(ctMethod, coverageImprovement);
+                this.fullCoveragePerAmplifiedMethod.put(ctMethod, newCoverage);
                 this.cumulativeAmplifiedCoverage.accumulate(newCoverage);
             }
         }
@@ -96,11 +100,15 @@ public class ExtendedCoverageSelector extends TakeAllSelector {
 
     private TestClassJSON jsonReport() {
         TestClassJSON testClassJSON;
-        testClassJSON = new TestClassJSON(this.initialCoverage, this.cumulativeAmplifiedCoverage
-                .coverageImprovementOver(this.initialCoverage));
-        this.selectedAmplifiedTest.stream().map(ctMethod -> new TestCaseJSON(ctMethod.getSimpleName(), Counter
-                .getAssertionOfSinceOrigin(ctMethod), Counter
-                .getInputOfSinceOrigin(ctMethod), this.coveragePerAmplifiedMethod.get(ctMethod)))
+        testClassJSON = new TestClassJSON(this.initialCoverage,
+                this.cumulativeAmplifiedCoverage.coverageImprovementOver(this.initialCoverage),
+                this.cumulativeAmplifiedCoverage);
+        this.selectedAmplifiedTest.stream()
+                .map(ctMethod -> new TestCaseJSON(ctMethod.getSimpleName(),
+                    Counter.getAssertionOfSinceOrigin(ctMethod),
+                    Counter.getInputOfSinceOrigin(ctMethod),
+                    this.coverageImprovementPerAmplifiedMethod.get(ctMethod),
+                    this.fullCoveragePerAmplifiedMethod.get(ctMethod)))
                 .forEach(testClassJSON::addTestCase);
 
         return testClassJSON;

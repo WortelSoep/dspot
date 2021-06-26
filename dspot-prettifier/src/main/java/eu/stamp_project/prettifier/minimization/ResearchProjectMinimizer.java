@@ -8,6 +8,7 @@ import eu.stamp_project.dspot.common.test_framework.TestFramework;
 import eu.stamp_project.dspot.selector.pitmutantscoreselector.AbstractParser;
 import eu.stamp_project.dspot.selector.pitmutantscoreselector.AbstractPitResult;
 import eu.stamp_project.dspot.selector.pitmutantscoreselector.PitXMLResultParser;
+import eu.stamp_project.prettifier.Main;
 import eu.stamp_project.prettifier.output.report.ReportJSON;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -112,6 +113,12 @@ public class ResearchProjectMinimizer implements Minimizer {
         return clone;
     }
 
+    /**
+     * Checks if two given test methods are equivalant. (Are identical or cover the same mutants)
+     * @param clone Changed test method
+     * @param testToBeAmplified Original test method.
+     * @return true if the cloned test case covers the same mutants as the testToBeAmplified or if it is unchanged, false otherwise.
+     */
     private boolean checkMethodEquivalance(CtMethod<?> clone, CtMethod<?> testToBeAmplified) {
         //We didn't change the method, no reason to check it again.
         if (clone.equals(testToBeAmplified))
@@ -131,53 +138,6 @@ public class ResearchProjectMinimizer implements Minimizer {
         }
 
         return false;
-    }
-
-    /**
-     * Removes all statements, expect for necessary declarations.
-     * @param test The test of which the statement need to be removed.
-     */
-    private void removeUnnecessaryStatementsBroad(CtMethod<?> test) {
-        List<CtStatement> statements = test.getBody().getStatements();
-        List<CtInvocation<?>> assertions = getAssertions(test);
-
-        //Map all relations between references
-        ArrayList<List<String>> pools = new ArrayList<>();
-        for (int i = statements.size() - 1; i >= 0; i--) {
-            CtStatement curStatement = statements.get(i);
-
-            List<String> neededReferences = curStatement.getElements(new TypeFilter<>(CtVariableReference.class)).stream().map(CtReference::getSimpleName).collect(Collectors.toList());
-            List<String> variables = curStatement.getElements(new TypeFilter<>(CtVariable.class)).stream().map(CtNamedElement::getSimpleName).collect(Collectors.toList());
-            neededReferences.addAll(variables);
-
-            for (int x = i - 1; x >= 0; x--) {
-                CtStatement otherStatement = statements.get(x);
-                //Only look for declarations, not CtVariableReference
-                List<String> varsOther = otherStatement.getElements(new TypeFilter<>(CtVariable.class)).stream().map(CtNamedElement::getSimpleName).collect(Collectors.toList());
-
-                if (!Collections.disjoint(neededReferences, varsOther)) {
-                    variables.addAll(varsOther);
-                }
-            }
-            if (!variables.isEmpty())
-                pools.add(variables);
-        }
-
-        List<String> usedReferences = new ArrayList<>();
-        for (int i = assertions.size() - 1; i >= 0; i--) {
-            CtInvocation<?> curAssertion = assertions.get(i);
-            usedReferences.addAll(
-                    curAssertion.getElements(new TypeFilter<>(CtVariableReference.class)).stream().map(CtReference::getSimpleName).collect(Collectors.toList()));
-            for (List<String> pool : pools) {
-                //First element of the pool contains the actual variable that is being assigned.
-                if (usedReferences.contains(pool.get(0))) {
-                    usedReferences.addAll(pool);
-                }
-            }
-        }
-
-        List<CtStatement> unnecessaryStatements = getNotDeclarations(test, usedReferences);
-        removeStatements(test, unnecessaryStatements);
     }
 
     /**
@@ -209,6 +169,59 @@ public class ResearchProjectMinimizer implements Minimizer {
     }
 
     /**
+     * Removes all statements, expect for necessary declarations.
+     * @param test The test of which the statement need to be removed.
+     */
+    private void removeUnnecessaryStatementsBroad(CtMethod<?> test) {
+        List<CtStatement> statements = test.getBody().getStatements();
+        List<CtInvocation<?>> assertions = getAssertions(test);
+
+        //Map all relations between references
+        ArrayList<List<String>> pools = new ArrayList<>();
+        for (int i = statements.size() - 1; i >= 0; i--) {
+            CtStatement curStatement = statements.get(i);
+
+            List<String> neededReferences = curStatement.getElements(new TypeFilter<>(CtVariableReference.class)).stream().map(CtReference::getSimpleName).collect(Collectors.toList());
+            List<String> variables = curStatement.getElements(new TypeFilter<>(CtVariable.class)).stream().map(CtNamedElement::getSimpleName).collect(Collectors.toList());
+            //Not a declaration, we don't care about this statement.
+            if (variables.size() == 0) {
+                continue;
+            }
+
+            neededReferences.addAll(variables);
+
+            for (int x = i - 1; x >= 0; x--) {
+                CtStatement otherStatement = statements.get(x);
+                //Only look for declarations, not CtVariableReference
+                List<String> varsOther = otherStatement.getElements(new TypeFilter<>(CtVariable.class)).stream().map(CtNamedElement::getSimpleName).collect(Collectors.toList());
+
+                if (!Collections.disjoint(neededReferences, varsOther)) {
+                    variables.addAll(varsOther);
+                }
+            }
+            if (!variables.isEmpty())
+                pools.add(variables);
+        }
+
+        //Check which statements are relevant for assertions.
+        List<String> usedReferences = new ArrayList<>();
+        for (int i = assertions.size() - 1; i >= 0; i--) {
+            CtInvocation<?> curAssertion = assertions.get(i);
+            usedReferences.addAll(
+                    curAssertion.getElements(new TypeFilter<>(CtVariableReference.class)).stream().map(CtReference::getSimpleName).collect(Collectors.toList()));
+            for (List<String> pool : pools) {
+                //First element of the pool contains the actual variable that is being assigned.
+                if (usedReferences.contains(pool.get(0))) {
+                    usedReferences.addAll(pool);
+                }
+            }
+        }
+
+        List<CtStatement> unnecessaryStatements = getNotDeclarations(test, usedReferences);
+        removeStatements(test, unnecessaryStatements);
+    }
+
+    /**
      * Removes all unused objects and objects which only use necessary variables when declared.
      * @param test The test of which the statement need to be removed.
      */
@@ -222,10 +235,12 @@ public class ResearchProjectMinimizer implements Minimizer {
         for (int i = statements.size() - 1; i >= 0; i--) {
             CtStatement curStatement = statements.get(i);
 
+            //Mark statement if it contains a variable declaration (because we later want to ignore these statements if they only interact with needed variables when declared)
             if (curStatement.getElements(new TypeFilter<>(CtVariable.class)).size() > 0) {
                 marked.add(pools.size());
             }
 
+            //Get references in this statement.
             List<String> variables = curStatement.getElements(new TypeFilter<>(CtVariable.class)).stream().map(CtNamedElement::getSimpleName).collect(Collectors.toList());
             variables.addAll(curStatement.getElements(new TypeFilter<>(CtVariableReference.class)).stream().map(CtReference::getSimpleName).collect(Collectors.toList()));
 
@@ -234,6 +249,8 @@ public class ResearchProjectMinimizer implements Minimizer {
 
                 List<String> varsOther = otherStatement.getElements(new TypeFilter<>(CtVariableReference.class)).stream().map(CtReference::getSimpleName).collect(Collectors.toList());
 
+                //Exclude other statements that contain a variable declaration (as we only want to include them if we need the variable being declared)
+                //Not if it is being declared using other variables that are used in the assert statement.
                 if (otherStatement.getElements(new TypeFilter<>(CtVariable.class)).size() > 0 && otherStatement.getElements(new TypeFilter<>(CtLoop.class)).size() == 0) {
                     continue;
                 }
@@ -252,6 +269,7 @@ public class ResearchProjectMinimizer implements Minimizer {
             pools.add(variables);
         }
 
+        //Check which statements are relevant for assertions.
         List<String> usedReferences = new ArrayList<>();
         for (int i = assertions.size() - 1; i >= 0; i--) {
             CtInvocation<?> curAssertion = assertions.get(i);
@@ -302,6 +320,7 @@ public class ResearchProjectMinimizer implements Minimizer {
             pools.add(variables);
         }
 
+        //Check which statements are relevant for assertions.
         List<String> usedReferences = new ArrayList<>();
         for (int i = assertions.size() - 1; i >= 0; i--) {
             CtInvocation<?> curAssertion = assertions.get(i);
@@ -450,6 +469,6 @@ public class ResearchProjectMinimizer implements Minimizer {
      */
     @Override
     public void updateReport(ReportJSON report) {
-
+        report.researchProjectJSON.medianTimeMinimizationInMillis = Main.getMedian(this.timesMinimizationInMillis);
     }
 }

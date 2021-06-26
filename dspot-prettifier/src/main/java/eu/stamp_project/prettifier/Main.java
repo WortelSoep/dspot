@@ -10,6 +10,7 @@ import eu.stamp_project.prettifier.context2name.Context2Name;
 import eu.stamp_project.prettifier.minimization.GeneralMinimizer;
 import eu.stamp_project.prettifier.minimization.Minimizer;
 import eu.stamp_project.prettifier.minimization.PitMutantMinimizer;
+import eu.stamp_project.prettifier.minimization.ResearchProjectMinimizer;
 import eu.stamp_project.prettifier.options.UserInput;
 import eu.stamp_project.prettifier.output.PrettifiedTestMethods;
 import eu.stamp_project.prettifier.output.report.ReportJSON;
@@ -77,7 +78,12 @@ public class Main {
             return;
         }
         DSpotState.verbose = inputConfiguration.isVerbose();
+        long startTime = System.currentTimeMillis();
         run(inputConfiguration);
+        final long elapsedTime = System.currentTimeMillis() - startTime;
+        LOGGER.info("Reduced tests in {} ms.",
+                elapsedTime
+        );
     }
 
     public static void run(UserInput configuration) {
@@ -116,7 +122,7 @@ public class Main {
         final List<CtMethod<?>> minimizedAmplifiedTestMethods;
 
         // 1 minimize amplified test methods
-        if (configuration.isApplyAllPrettifiers() ||  configuration.isApplyGeneralMinimizer() || configuration.isApplyPitMinimizer()) {
+        if (configuration.isApplyAllPrettifiers() ||  configuration.isApplyGeneralMinimizer() || configuration.isApplyPitMinimizer() || configuration.isResearchProjectMinimizer()) {
             minimizedAmplifiedTestMethods = applyMinimization(
                     testMethods,
                     amplifiedTestClass,
@@ -164,6 +170,21 @@ public class Main {
             final AutomaticBuilder automaticBuilder = configuration.getBuilderEnum().getAutomaticBuilder(configuration);
             amplifiedTestMethodsToBeMinimized = Main.applyGivenMinimizer(
                     new PitMutantMinimizer(
+                            amplifiedTestClass,
+                            automaticBuilder,
+                            configuration.getAbsolutePathToProjectRoot(),
+                            configuration.getClasspathClassesProject(),
+                            configuration.getAbsolutePathToTestClasses()
+                    ),
+                    amplifiedTestMethodsToBeMinimized
+            );
+        }
+
+        // 3 apply research project minimization
+        if (configuration.isApplyAllPrettifiers() || configuration.isResearchProjectMinimizer()) {
+            final AutomaticBuilder automaticBuilder = configuration.getBuilderEnum().getAutomaticBuilder(configuration);
+            amplifiedTestMethodsToBeMinimized = Main.applyGivenMinimizer(
+                    new ResearchProjectMinimizer(
                             amplifiedTestClass,
                             automaticBuilder,
                             configuration.getAbsolutePathToProjectRoot(),

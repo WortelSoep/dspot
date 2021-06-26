@@ -1,5 +1,6 @@
 package eu.stamp_project.prettifier.output.report;
 
+import eu.stamp_project.prettifier.output.report.minimization.ResearchProject.ResearchProjectJSON;
 import eu.stamp_project.prettifier.output.report.minimization.general.GeneralMinimizationJSON;
 import eu.stamp_project.prettifier.output.report.minimization.pit.PitMinimizationJSON;
 
@@ -14,6 +15,8 @@ public class ReportJSON {
 
     public PitMinimizationJSON pitMinimizationJSON;
 
+    public ResearchProjectJSON researchProjectJSON;
+
     public int nbTestMethods;
 
     public double medianNbStatementBefore;
@@ -23,6 +26,6 @@ public class ReportJSON {
     public ReportJSON() {
         this.generalMinimizationJSON = new GeneralMinimizationJSON();
         this.pitMinimizationJSON = new PitMinimizationJSON();
+        this.researchProjectJSON = new ResearchProjectJSON();
     }
-
 }

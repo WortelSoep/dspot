@@ -90,6 +90,23 @@ public class UserInput extends eu.stamp_project.dspot.common.configuration.UserI
     }
 
     @CommandLine.Option(
+            names = "--apply-research-project-minimizer",
+            description = "Apply the research project minimizer to remove statements that do not affect the mutation score." +
+                    " Default value: ${DEFAULT-VALUE}",
+            defaultValue = "false"
+    )
+    private boolean researchProjectMinimizer;
+
+    public boolean isResearchProjectMinimizer() {
+        return researchProjectMinimizer;
+    }
+
+    public UserInput setResearchProjectMinimizer(boolean researchProjectMinimizer) {
+        this.researchProjectMinimizer = researchProjectMinimizer;
+        return this;
+    }
+
+    @CommandLine.Option(
             names = "--rename-test-methods",
             description = "Apply Code2Vec to give the test methods more expressive names." +
                     " Default value: ${DEFAULT-VALUE}",

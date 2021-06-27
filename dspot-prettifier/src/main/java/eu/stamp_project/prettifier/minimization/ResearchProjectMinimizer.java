@@ -181,8 +181,10 @@ public class ResearchProjectMinimizer implements Minimizer {
         for (int i = statements.size() - 1; i >= 0; i--) {
             CtStatement curStatement = statements.get(i);
 
-            List<String> neededReferences = curStatement.getElements(new TypeFilter<>(CtVariableReference.class)).stream().map(CtReference::getSimpleName).collect(Collectors.toList());
-            List<String> variables = curStatement.getElements(new TypeFilter<>(CtVariable.class)).stream().map(CtNamedElement::getSimpleName).collect(Collectors.toList());
+            List<String> neededReferences = curStatement.getElements(new TypeFilter<>(CtVariableReference.class)).stream()
+                .map(CtReference::getSimpleName).collect(Collectors.toList());
+            List<String> variables = curStatement.getElements(new TypeFilter<>(CtVariable.class)).stream()
+                .map(CtNamedElement::getSimpleName).collect(Collectors.toList());
             //Not a declaration, we don't care about this statement.
             if (variables.size() == 0) {
                 continue;
@@ -193,7 +195,8 @@ public class ResearchProjectMinimizer implements Minimizer {
             for (int x = i - 1; x >= 0; x--) {
                 CtStatement otherStatement = statements.get(x);
                 //Only look for declarations, not CtVariableReference
-                List<String> varsOther = otherStatement.getElements(new TypeFilter<>(CtVariable.class)).stream().map(CtNamedElement::getSimpleName).collect(Collectors.toList());
+                List<String> varsOther = otherStatement.getElements(new TypeFilter<>(CtVariable.class)).stream()
+                    .map(CtNamedElement::getSimpleName).collect(Collectors.toList());
 
                 if (!Collections.disjoint(neededReferences, varsOther)) {
                     variables.addAll(varsOther);
@@ -208,7 +211,8 @@ public class ResearchProjectMinimizer implements Minimizer {
         for (int i = assertions.size() - 1; i >= 0; i--) {
             CtInvocation<?> curAssertion = assertions.get(i);
             usedReferences.addAll(
-                    curAssertion.getElements(new TypeFilter<>(CtVariableReference.class)).stream().map(CtReference::getSimpleName).collect(Collectors.toList()));
+                    curAssertion.getElements(new TypeFilter<>(CtVariableReference.class)).stream()
+                .map(CtReference::getSimpleName).collect(Collectors.toList()));
             for (List<String> pool : pools) {
                 //First element of the pool contains the actual variable that is being assigned.
                 if (usedReferences.contains(pool.get(0))) {
@@ -241,24 +245,29 @@ public class ResearchProjectMinimizer implements Minimizer {
             }
 
             //Get references in this statement.
-            List<String> variables = curStatement.getElements(new TypeFilter<>(CtVariable.class)).stream().map(CtNamedElement::getSimpleName).collect(Collectors.toList());
-            variables.addAll(curStatement.getElements(new TypeFilter<>(CtVariableReference.class)).stream().map(CtReference::getSimpleName).collect(Collectors.toList()));
+            List<String> variables = curStatement.getElements(new TypeFilter<>(CtVariable.class)).stream()
+                .map(CtNamedElement::getSimpleName).collect(Collectors.toList());
+            variables.addAll(curStatement.getElements(new TypeFilter<>(CtVariableReference.class)).stream()
+                             .map(CtReference::getSimpleName).collect(Collectors.toList()));
 
             for (int x = i - 1; x >= 0; x--) {
                 CtStatement otherStatement = statements.get(x);
 
-                List<String> varsOther = otherStatement.getElements(new TypeFilter<>(CtVariableReference.class)).stream().map(CtReference::getSimpleName).collect(Collectors.toList());
+                List<String> varsOther = otherStatement.getElements(new TypeFilter<>(CtVariableReference.class)).stream()
+                    .map(CtReference::getSimpleName).collect(Collectors.toList());
 
                 //Exclude other statements that contain a variable declaration (as we only want to include them if we need the variable being declared)
                 //Not if it is being declared using other variables that are used in the assert statement.
-                if (otherStatement.getElements(new TypeFilter<>(CtVariable.class)).size() > 0 && otherStatement.getElements(new TypeFilter<>(CtLoop.class)).size() == 0) {
+                if (otherStatement.getElements(new TypeFilter<>(CtVariable.class)).size() > 0 
+                    && otherStatement.getElements(new TypeFilter<>(CtLoop.class)).size() == 0) {
                     continue;
                 }
 
                 if (otherStatement.getElements(new TypeFilter<>(CtLoop.class)).size() > 0) {
                     varsOther = new ArrayList<>();
                     for (CtLoop loop : otherStatement.getElements(new TypeFilter<>(CtLoop.class))) {
-                        varsOther.addAll(loop.getBody().getElements(new TypeFilter<>(CtVariableReference.class)).stream().map(CtReference::getSimpleName).collect(Collectors.toList()));
+                        varsOther.addAll(loop.getBody().getElements(new TypeFilter<>(CtVariableReference.class)).stream()
+                                         .map(CtReference::getSimpleName).collect(Collectors.toList()));
                     }
                 }
 
@@ -274,7 +283,8 @@ public class ResearchProjectMinimizer implements Minimizer {
         for (int i = assertions.size() - 1; i >= 0; i--) {
             CtInvocation<?> curAssertion = assertions.get(i);
             usedReferences.addAll(
-                    curAssertion.getElements(new TypeFilter<>(CtVariableReference.class)).stream().map(CtReference::getSimpleName).collect(Collectors.toList()));
+                    curAssertion.getElements(new TypeFilter<>(CtVariableReference.class)).stream()
+                .map(CtReference::getSimpleName).collect(Collectors.toList()));
 
             for (int x = 0; x < pools.size(); x++) {
                 if (marked.contains(x)) {
@@ -305,13 +315,17 @@ public class ResearchProjectMinimizer implements Minimizer {
         for (int i = statements.size() - 1; i >= 0; i--) {
             CtStatement curStatement = statements.get(i);
 
-            List<String> variables = curStatement.getElements(new TypeFilter<>(CtVariableReference.class)).stream().map(CtReference::getSimpleName).collect(Collectors.toList());
-            variables.addAll(curStatement.getElements(new TypeFilter<>(CtVariable.class)).stream().map(CtNamedElement::getSimpleName).collect(Collectors.toList()));
+            List<String> variables = curStatement.getElements(new TypeFilter<>(CtVariableReference.class)).stream()
+                .map(CtReference::getSimpleName).collect(Collectors.toList());
+            variables.addAll(curStatement.getElements(new TypeFilter<>(CtVariable.class)).stream()
+                             .map(CtNamedElement::getSimpleName).collect(Collectors.toList()));
             for (int x = i - 1; x >= 0; x--) {
                 CtStatement otherStatement = statements.get(x);
 
-                List<String> varsOther = otherStatement.getElements(new TypeFilter<>(CtVariableReference.class)).stream().map(CtReference::getSimpleName).collect(Collectors.toList());
-                varsOther.addAll(otherStatement.getElements(new TypeFilter<>(CtVariable.class)).stream().map(CtNamedElement::getSimpleName).collect(Collectors.toList()));
+                List<String> varsOther = otherStatement.getElements(new TypeFilter<>(CtVariableReference.class)).stream()
+                    .map(CtReference::getSimpleName).collect(Collectors.toList());
+                varsOther.addAll(otherStatement.getElements(new TypeFilter<>(CtVariable.class)).stream()
+                                 .map(CtNamedElement::getSimpleName).collect(Collectors.toList()));
 
                 if (!Collections.disjoint(variables, varsOther)) {
                     variables.addAll(varsOther);
@@ -325,7 +339,8 @@ public class ResearchProjectMinimizer implements Minimizer {
         for (int i = assertions.size() - 1; i >= 0; i--) {
             CtInvocation<?> curAssertion = assertions.get(i);
             usedReferences.addAll(
-                    curAssertion.getElements(new TypeFilter<>(CtVariableReference.class)).stream().map(CtReference::getSimpleName).collect(Collectors.toList()));
+                    curAssertion.getElements(new TypeFilter<>(CtVariableReference.class)).stream()
+                .map(CtReference::getSimpleName).collect(Collectors.toList()));
 
             for (List<String> pool : pools) {
                 if (!Collections.disjoint(usedReferences, pool)) {
@@ -377,13 +392,16 @@ public class ResearchProjectMinimizer implements Minimizer {
         for (int i = statements.size() - 1; i >= 0; i--) {
             CtStatement curStatement = statements.get(i);
 
-            List<String> variables = curStatement.getElements(new TypeFilter<>(CtVariable.class)).stream().map(CtNamedElement::getSimpleName).collect(Collectors.toList());
+            List<String> variables = curStatement.getElements(new TypeFilter<>(CtVariable.class)).stream()
+                .map(CtNamedElement::getSimpleName).collect(Collectors.toList());
+            
             if (variables.size() > 0 && Collections.disjoint(usedReferences, variables)) {
                 unusedStatements.add(curStatement);
                 continue;
             }
 
-            variables.addAll(curStatement.getElements(new TypeFilter<>(CtVariableReference.class)).stream().map(CtReference::getSimpleName).collect(Collectors.toList()));
+            variables.addAll(curStatement.getElements(new TypeFilter<>(CtVariableReference.class)).stream()
+                             .map(CtReference::getSimpleName).collect(Collectors.toList()));
             if (Collections.disjoint(usedReferences, variables)) {
                 unusedStatements.add(curStatement);
             }
@@ -411,7 +429,8 @@ public class ResearchProjectMinimizer implements Minimizer {
             }
 
             //Get a list of all declarations in this statement.
-            List<String> variables = curStatement.getElements(new TypeFilter<>(CtVariable.class)).stream().map(CtNamedElement::getSimpleName).collect(Collectors.toList());
+            List<String> variables = curStatement.getElements(new TypeFilter<>(CtVariable.class)).stream()
+                .map(CtNamedElement::getSimpleName).collect(Collectors.toList());
             //If usedReferences does not contain one of these declarations we mark the statement.
              if (Collections.disjoint(usedReferences, variables)) {
                 unusedStatements.add(curStatement);
